@@ -30,11 +30,12 @@ prev_error = 0
 
 on_blue = False
 object_action_performed = False
+motors_enabled = False
 
 # Define target color values
-green_R, green_G, green_B = 13, 40, 6
-blue_R, blue_G, blue_B = 8, 10, 10
-white_R, white_G, white_B = 55, 50, 20
+green_R, green_G, green_B = 13, 40, 10
+blue_R, blue_G, blue_B = 8, 10, 17
+white_R, white_G, white_B = 56, 50, 42
 
 # Calculate light intensity for each color
 green_intensity = (green_R + green_G + green_B) / 3
@@ -49,6 +50,11 @@ blue_difference = 20  # blue_G is significantly lower.
 
 # Main loop
 while True:
+    # Check if the button is pressed to toggle motors
+    if Button.CENTER in ev3.buttons.pressed():
+        motors_enabled = not motors_enabled
+        wait(500)  # Wait for 0.5 seconds to avoid rapid toggling
+    
     # Read the RGB values from the light sensor
     red_value, green_value, blue_value = color_sensor.rgb()
 
@@ -139,22 +145,28 @@ while True:
     # Apply tolerance
     if error > tolerance:
         # Too dark, turn left
-        left_motor.run(left_speed)
-        right_motor.run(right_speed)
+        if motors_enabled:
+            left_motor.run(left_speed)
+            right_motor.run(right_speed)
         ev3.screen.draw_text(0, 50, "Turn Right")
         ev3.screen.draw_text(0, 60, "Error({}): Too dark".format(round(error,4)))
     elif error < -tolerance:
         # Too bright, turn right
-        left_motor.run(left_speed)
-        right_motor.run(right_speed)
+        if motors_enabled:
+            left_motor.run(left_speed)
+            right_motor.run(right_speed)
         ev3.screen.draw_text(0, 50, "Turn Left")
         ev3.screen.draw_text(0, 60, "Error ({}): Too bright".format(round(error,4)))
     else:
-        # In the desire```  d range, go straight
-        left_motor.run(base_speed)
-        right_motor.run(base_speed)
+        # In the desired range, go straight
+        if motors_enabled:
+            left_motor.run(base_speed)
+            right_motor.run(base_speed)
         ev3.screen.draw_text(0, 50, "Straight")
         ev3.screen.draw_text(0, 60, "Error ({}): In range".format(round(error,4)))
+
+    # Display info about if motors are enabled
+    ev3.screen.draw_text(0, 100, "Motors Enabled: {}".format(motors_enabled))
 
     # Wait briefly before repeating the loop
     wait(100)
