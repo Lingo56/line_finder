@@ -1,7 +1,7 @@
 #!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor
-from pybricks.parameters import Port
+from pybricks.parameters import Port, Button
 from pybricks.media.ev3dev import Font
 from pybricks.tools import wait
 
@@ -53,6 +53,9 @@ while True:
     # Check if the button is pressed to toggle motors
     if Button.CENTER in ev3.buttons.pressed():
         motors_enabled = not motors_enabled
+        if motors_enabled == False:
+            left_motor.stop()
+            right_motor.stop()
         wait(500)  # Wait for 0.5 seconds to avoid rapid toggling
     
     # Read the RGB values from the light sensor
