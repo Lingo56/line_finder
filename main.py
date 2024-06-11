@@ -18,9 +18,9 @@ ev3.screen.set_font(small_font)
 # Write your program here.
 # Define variables and constants
 tolerance = 10
-blue_tolerance = 20
-green_tolerance = 8
-white_tolerance = 9
+blue_tolerance = 16
+green_tolerance = 6
+white_tolerance = 7
 base_speed = 50  # Base speed for the motors
 Kp = 10  # Proportional gain
 Ki = 0.000004  # Integral gain
@@ -63,14 +63,30 @@ while True:
         base_speed -= 5
         if base_speed < 0:
             base_speed = 0
-        wait(50)  # Wait for 0.5 seconds to avoid rapid toggling
+        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
     
     # Check if the right button is pressed to increase speed
     if Button.RIGHT in ev3.buttons.pressed():
         base_speed += 5
         if base_speed > 150:  # You can adjust the maximum speed limit as needed
             base_speed = 150
-        wait(50)  # Wait for 0.5 seconds to avoid rapid toggling
+        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
+        
+    # Check if the right button is pressed to increase speed
+    if Button.UP in ev3.buttons.pressed():
+        Kp += 0.5
+        if Kp > 40:  # You can adjust the maximum speed limit as needed
+            Kp = 40
+        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
+        
+    # Check if the left button is pressed to decrease speed
+    if Button.DOWN in ev3.buttons.pressed():
+        Kp -= 0.5
+        if Kp < 1:
+            Kp = 1
+        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
+    
+
     
     # Read the RGB values from the light sensor
     red_value, green_value, blue_value = color_sensor.rgb()
@@ -183,8 +199,9 @@ while True:
         ev3.screen.draw_text(0, 60, "Error ({}): In range".format(round(error,4)))
 
     # Display info about if motors
-    ev3.screen.draw_text(0, 100, "Motors Enabled: {}".format(motors_enabled))
-    ev3.screen.draw_text(0, 110, "Base Speed: {}".format(base_speed))
+    ev3.screen.draw_text(0, 90, "Motors Enabled: {}".format(motors_enabled))
+    ev3.screen.draw_text(0, 100, "Base Speed: {}".format(base_speed))
+    ev3.screen.draw_text(0, 110, "Proportional Gain (Kp): {}".format(Kp))
 
     # Wait briefly before repeating the loop
     wait(100)
