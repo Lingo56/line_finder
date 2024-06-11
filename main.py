@@ -21,7 +21,7 @@ tolerance = 10
 blue_tolerance = 20
 green_tolerance = 8
 white_tolerance = 9
-base_speed = 20  # Base speed for the motors
+base_speed = 50  # Base speed for the motors
 Kp = 10  # Proportional gain
 Ki = 0.000004  # Integral gain
 Kd = 0.00001  # Derivative gain
@@ -57,6 +57,20 @@ while True:
             left_motor.stop()
             right_motor.stop()
         wait(500)  # Wait for 0.5 seconds to avoid rapid toggling
+        
+    # Check if the left button is pressed to decrease speed
+    if Button.LEFT in ev3.buttons.pressed():
+        base_speed -= 5
+        if base_speed < 0:
+            base_speed = 0
+        wait(50)  # Wait for 0.5 seconds to avoid rapid toggling
+    
+    # Check if the right button is pressed to increase speed
+    if Button.RIGHT in ev3.buttons.pressed():
+        base_speed += 5
+        if base_speed > 150:  # You can adjust the maximum speed limit as needed
+            base_speed = 150
+        wait(50)  # Wait for 0.5 seconds to avoid rapid toggling
     
     # Read the RGB values from the light sensor
     red_value, green_value, blue_value = color_sensor.rgb()
@@ -168,8 +182,9 @@ while True:
         ev3.screen.draw_text(0, 50, "Straight")
         ev3.screen.draw_text(0, 60, "Error ({}): In range".format(round(error,4)))
 
-    # Display info about if motors are enabled
+    # Display info about if motors
     ev3.screen.draw_text(0, 100, "Motors Enabled: {}".format(motors_enabled))
+    ev3.screen.draw_text(0, 110, "Base Speed: {}".format(base_speed))
 
     # Wait briefly before repeating the loop
     wait(100)
