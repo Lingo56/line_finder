@@ -18,13 +18,13 @@ ev3.screen.set_font(small_font)
 # Write your program here.
 # Define variables and constants
 tolerance = 10
-blue_tolerance = 16
-green_tolerance = 6
-white_tolerance = 7
-base_speed = 50  # Base speed for the motors
-Kp = 10  # Proportional gain
-Ki = 0.000004  # Integral gain
-Kd = 0.00001  # Derivative gain
+blue_tolerance = 20
+green_tolerance = 9
+white_tolerance = 9
+base_speed = 75  # Base speed for the motors
+Kp = 15.5  # Proportional gain
+Ki = 0.01  # Integral gain
+Kd = 0.01  # Derivative gain
 integral = 0
 prev_error = 0
 
@@ -33,9 +33,9 @@ object_action_performed = False
 motors_enabled = False
 
 # Define target color values
-green_R, green_G, green_B = 13, 40, 10
-blue_R, blue_G, blue_B = 8, 10, 17
-white_R, white_G, white_B = 56, 50, 42
+green_R, green_G, green_B = 14, 47, 10
+blue_R, blue_G, blue_B = 6, 7, 9
+white_R, white_G, white_B = 56, 56, 42
 
 # Calculate light intensity for each color
 green_intensity = (green_R + green_G + green_B) / 3
@@ -45,7 +45,7 @@ white_intensity = (white_R + white_G + white_B) / 3
 # Calculate thresholds
 threshold = (green_intensity + white_intensity) / 2
 blue_threshold = (blue_intensity + white_intensity) / 2
-white_difference = 15  # white_R is significantly higher.
+white_difference = 30  # white_R is significantly higher.
 blue_difference = 20  # blue_G is significantly lower.
 
 # Main loop
@@ -85,9 +85,7 @@ while True:
         if Kp < 1:
             Kp = 1
         wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
-    
 
-    
     # Read the RGB values from the light sensor
     red_value, green_value, blue_value = color_sensor.rgb()
 
@@ -104,7 +102,7 @@ while True:
     ev3.screen.draw_text(0, 30, "Object Distance: {}".format(distance))
 
     # Check if an object is within 10cm of the ultrasonic sensor
-    if distance <= 100 and not object_action_performed:
+    if distance <= 1 and not object_action_performed:
         # Stop the motors
         left_motor.stop()
         right_motor.stop()
@@ -159,8 +157,8 @@ while True:
     prev_error = error
 
     # Adjust motor speeds proportionally based on the error, integral, and derivative terms
-    left_speed = base_speed + Kp * error + Ki * integral + Kd * derivative
-    right_speed = base_speed - Kp * error - Ki * integral - Kd * derivative
+    left_speed = base_speed + (Kp * error) + (Ki * integral) + (Kd * derivative)
+    right_speed = base_speed - (Kp * error) - (Ki * integral) - (Kd * derivative)
 
     # Set tolerances based on color
     if green_value < blue_difference:  # if blue
@@ -199,8 +197,10 @@ while True:
         ev3.screen.draw_text(0, 60, "Error ({}): In range".format(round(error,4)))
 
     # Display info about if motors
-    ev3.screen.draw_text(0, 90, "Motors Enabled: {}".format(motors_enabled))
-    ev3.screen.draw_text(0, 100, "Base Speed: {}".format(base_speed))
+    ev3.screen.draw_text(0, 70, "Motors Enabled: {}".format(motors_enabled))
+    ev3.screen.draw_text(0, 80, "Base Speed: {}".format(base_speed))
+    ev3.screen.draw_text(0, 90, "Right Speed: {}".format(right_speed))
+    ev3.screen.draw_text(0, 100, "Left Speed: {}".format(left_speed))
     ev3.screen.draw_text(0, 110, "Proportional Gain (Kp): {}".format(Kp))
 
     # Wait briefly before repeating the loop
