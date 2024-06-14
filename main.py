@@ -17,13 +17,17 @@ ev3.screen.set_font(small_font)
 
 # Write your program here.
 # Define variables and constants
+# TODO Adjust the tolerance detection so that there's a wide window to go straight
+# However, improve how the robot responds outside of the window
+# Unsure the best way to do this, but try to find a way so that on straights it has a more forgiving Kp
+# But then on corners have a steeper Kp
 tolerance = 10
-blue_tolerance = 8000
-green_tolerance = 700
-white_tolerance = 700
+blue_tolerance = 4
+green_tolerance = 3
+white_tolerance = 3
 base_speed = 75  # Base speed for the motors
-Kp = 0.1  # Proportional gain
-Ki = 0  # Integral gain
+Kp = 8  # Proportional gain
+Ki = 0.01  # Integral gain
 Kd = 0  # Derivative gain
 integral = 0
 prev_error = 0
@@ -149,7 +153,7 @@ while True:
     # Calculate the error term
     error = threshold - current_intensity
     
-    error = error ** 3
+    error = error
 
     # Integral term
     integral += error
