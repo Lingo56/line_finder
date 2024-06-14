@@ -18,13 +18,13 @@ ev3.screen.set_font(small_font)
 # Write your program here.
 # Define variables and constants
 tolerance = 10
-blue_tolerance = 20
-green_tolerance = 9
-white_tolerance = 9
+blue_tolerance = 8000
+green_tolerance = 700
+white_tolerance = 700
 base_speed = 75  # Base speed for the motors
-Kp = 15.5  # Proportional gain
-Ki = 0.01  # Integral gain
-Kd = 0.01  # Derivative gain
+Kp = 0.1  # Proportional gain
+Ki = 0  # Integral gain
+Kd = 0  # Derivative gain
 integral = 0
 prev_error = 0
 
@@ -34,7 +34,7 @@ motors_enabled = False
 
 # Define target color values
 green_R, green_G, green_B = 14, 47, 10
-blue_R, blue_G, blue_B = 6, 7, 9
+blue_R, blue_G, blue_B = 8, 11, 19
 white_R, white_G, white_B = 56, 56, 42
 
 # Calculate light intensity for each color
@@ -46,7 +46,7 @@ white_intensity = (white_R + white_G + white_B) / 3
 threshold = (green_intensity + white_intensity) / 2
 blue_threshold = (blue_intensity + white_intensity) / 2
 white_difference = 30  # white_R is significantly higher.
-blue_difference = 20  # blue_G is significantly lower.
+blue_difference = 35  # blue_G is significantly lower.
 
 # Main loop
 while True:
@@ -148,6 +148,8 @@ while True:
 
     # Calculate the error term
     error = threshold - current_intensity
+    
+    error = error ** 3
 
     # Integral term
     integral += error
