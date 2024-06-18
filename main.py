@@ -102,7 +102,7 @@ while True:
     ev3.screen.draw_text(0, 30, "Object Distance: {}".format(distance))
 
     # Check if an object is within 10cm of the ultrasonic sensor
-    if distance <= 100 and not object_action_performed:
+    if distance <= 100 and not object_action_performed and motors_enabled:
         # Stop the motors
         left_motor.stop()
         right_motor.stop()
@@ -114,34 +114,34 @@ while True:
         # Check color under the robot
         if on_blue:  # If on blue line
             # Rotate 180 degrees and go backwards
-            left_motor.run(-base_speed * 100)
-            right_motor.run(base_speed * 100)
-            wait(800)  # Rotate for 0.5 second
+            left_motor.run(-base_speed * 6)
+            right_motor.run(base_speed * 6)
+            wait(900)  # Rotate for 0.5 second
             left_motor.stop()
             right_motor.stop()
             object_action_performed = False
         else:  # If on green line
-            left_motor.run(base_speed * 100)
-            right_motor.run(base_speed * 100)
+            left_motor.run(base_speed * 6)
+            right_motor.run(base_speed * 6)
             wait(375)  # Go forward
             left_motor.stop()
             right_motor.stop()
-            wait(250)
-            left_motor.run(-base_speed * 100)
-            right_motor.run(base_speed * 100)
+            wait(400)
+            left_motor.run(-base_speed * 6)
+            right_motor.run(base_speed * 6)
             wait(375)  # Turn left
             left_motor.stop()
             right_motor.stop()
-            wait(250)
-            left_motor.run(base_speed * 100)
-            right_motor.run(-base_speed * 100)
-            wait(450)  # Turn Right
+            wait(400)
+            left_motor.run(base_speed * 6)
+            right_motor.run(-base_speed * 6)
+            wait(430)  # Turn Right
             left_motor.stop()
             right_motor.stop()
-            wait(250)
-            left_motor.run(-base_speed * 100)
-            right_motor.run(-base_speed * 100)
-            wait(450)  # Go Backwards
+            wait(400)
+            left_motor.run(-base_speed * 6)
+            right_motor.run(-base_speed * 6)
+            wait(400)  # Go Backwards
             left_motor.stop()
             right_motor.stop()
             wait(500)
