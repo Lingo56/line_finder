@@ -5,7 +5,7 @@ from pybricks.parameters import Port, Button
 from pybricks.media.ev3dev import Font
 from pybricks.tools import wait
 
-# Create your objects here.
+# Initialize objects
 ev3 = EV3Brick()
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.D)
@@ -15,203 +15,177 @@ ultrasonic_sensor = UltrasonicSensor(Port.S4)
 small_font = Font(size=9)
 ev3.screen.set_font(small_font)
 
-# Write your program here.
-# Define variables and constants
-tolerance = 10
-blue_tolerance = 17
-green_tolerance = 7.4
-white_tolerance = 6.7
-base_speed = 75  # Base speed for the motors
-Kp = 30  # Proportional gain
-Ki = 0  # Integral gain
-Kd = 0  # Derivative gain
+# Constants
+TOLERANCE = 10
+BLUE_TOLERANCE = 17
+GREEN_TOLERANCE = 7.4
+WHITE_TOLERANCE = 6.7
+BASE_SPEED = 75  # Base speed for the motors
+KP = 30  # Proportional gain
+KI = 0  # Integral gain
+KD = 0  # Derivative gain
+
+# Variables
 integral = 0
 prev_error = 0
-
 on_blue = False
 object_action_performed = False
 motors_enabled = False
 
-# Define target color values
-green_R, green_G, green_B = 14, 45, 10
-blue_R, blue_G, blue_B = 8, 11, 18
-white_R, white_G, white_B = 58, 58, 43
+# Target color values
+GREEN_R, GREEN_G, GREEN_B = 14, 45, 10
+BLUE_R, BLUE_G, BLUE_B = 8, 11, 18
+WHITE_R, WHITE_G, WHITE_B = 58, 58, 43
 
-# Calculate light intensity for each color
-green_intensity = (green_R + green_G + green_B) / 3
-blue_intensity = (blue_R + blue_G + blue_B) / 3
-white_intensity = (white_R + white_G + white_B) / 3
+# Light intensity calculations
+green_intensity = (GREEN_R + GREEN_G + GREEN_B) / 3
+blue_intensity = (BLUE_R + BLUE_G + BLUE_B) / 3
+white_intensity = (WHITE_R + WHITE_G + WHITE_B) / 3
 
-# Calculate thresholds
-threshold = (green_intensity + white_intensity) / 2
-blue_threshold = (blue_intensity + white_intensity) / 2
-white_difference = 30  # white_R is significantly higher.
-blue_difference = 35  # blue_G is significantly lower.
+# Thresholds
+THRESHOLD = (green_intensity + white_intensity) / 2
+BLUE_THRESHOLD = (blue_intensity + white_intensity) / 2
+WHITE_DIFFERENCE = 30  # white_R is significantly higher.
+BLUE_DIFFERENCE = 35  # blue_G is significantly lower.
 
-# Main loop
-while True:
-    # Check if the button is pressed to toggle motors
-    if Button.CENTER in ev3.buttons.pressed():
-        motors_enabled = not motors_enabled
-        if not motors_enabled:
-            left_motor.stop()
-            right_motor.stop()
-        wait(500)  # Wait for 0.5 seconds to avoid rapid toggling
-        
-    # Check if the left button is pressed to decrease speed
-    if Button.LEFT in ev3.buttons.pressed():
-        base_speed -= 5
-        if base_speed < 0:
-            base_speed = 0
-        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
-    
-    # Check if the right button is pressed to increase speed
-    if Button.RIGHT in ev3.buttons.pressed():
-        base_speed += 5
-        if base_speed > 150:  # You can adjust the maximum speed limit as needed
-            base_speed = 150
-        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
-        
-    # Check if the right button is pressed to increase speed
-    if Button.UP in ev3.buttons.pressed():
-        Kp += 1
-        if Kp > 100:  # You can adjust the maximum speed limit as needed
-            Kp = 100
-        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
-        
-    # Check if the left button is pressed to decrease speed
-    if Button.DOWN in ev3.buttons.pressed():
-        Kp -= 1
-        if Kp < 1:
-            Kp = 1
-        wait(200)  # Wait for 0.5 seconds to avoid rapid toggling
+def toggle_motors():
+    global motors_enabled
+    motors_enabled = not motors_enabled
+    if not motors_enabled:
+        left_motor.stop()
+        right_motor.stop()
+    wait(500)  # Wait for 0.5 seconds to avoid rapid toggling
 
-    # Read the RGB values from the light sensor
-    red_value, green_value, blue_value = color_sensor.rgb()
+def adjust_base_speed(delta):
+    global BASE_SPEED
+    BASE_SPEED = min(max(BASE_SPEED + delta, 0), 150)
+    wait(200)
 
-    # Read distance from ultrasonic sensor
-    distance = ultrasonic_sensor.distance()
+def adjust_kp(delta):
+    global KP
+    KP = min(max(KP + delta, 1), 100)
+    wait(200)
 
-    # Clear the screen before drawing new text
+def read_sensors():
+    return color_sensor.rgb(), ultrasonic_sensor.distance()
+
+def display_data(red_value, green_value, blue_value, distance, error, left_speed, right_speed):
     ev3.screen.clear()
-
-    # Display the RGB values and distance on the EV3 brick screen
     ev3.screen.draw_text(0, 0, "R: {}".format(red_value))
     ev3.screen.draw_text(0, 10, "G: {}".format(green_value))
     ev3.screen.draw_text(0, 20, "B: {}".format(blue_value))
     ev3.screen.draw_text(0, 30, "Object Distance: {}".format(distance))
+    ev3.screen.draw_text(0, 60, "Error ({}): ".format(round(error,4)))
+    ev3.screen.draw_text(0, 70, "Motors Enabled: {}".format(motors_enabled))
+    ev3.screen.draw_text(0, 80, "Base Speed: {}".format(BASE_SPEED))
+    ev3.screen.draw_text(0, 90, "Right Speed: {}".format(round(right_speed,3)))
+    ev3.screen.draw_text(0, 100, "Left Speed: {}".format(round(left_speed,3)))
+    ev3.screen.draw_text(0, 110, "Proportional Gain (Kp): {}".format(KP))
 
-    # Check if an object is within 10cm of the ultrasonic sensor
+def handle_object_detection(distance):
+    global object_action_performed
     if distance <= 100 and not object_action_performed and motors_enabled:
-        # Stop the motors
         left_motor.stop()
         right_motor.stop()
-        # Beep for 2 seconds
         ev3.speaker.beep()
         object_action_performed = True
         wait(2000)
+        if on_blue:
+            rotate_180()
+        else:
+            perform_green_line_action()
+        object_action_performed = False
 
-        # Check color under the robot
-        if on_blue:  # If on blue line
-            # Rotate 180 degrees and go backwards
-            left_motor.run(-base_speed * 6)
-            right_motor.run(base_speed * 6)
-            wait(900)  # Rotate for 0.5 second
-            left_motor.stop()
-            right_motor.stop()
-            object_action_performed = False
-        else:  # If on green line
-            left_motor.run(base_speed * 6)
-            right_motor.run(base_speed * 6)
-            wait(375)  # Go forward
-            left_motor.stop()
-            right_motor.stop()
-            wait(400)
-            left_motor.run(-base_speed * 6)
-            right_motor.run(base_speed * 6)
-            wait(375)  # Turn left
-            left_motor.stop()
-            right_motor.stop()
-            wait(400)
-            left_motor.run(base_speed * 6)
-            right_motor.run(-base_speed * 6)
-            wait(430)  # Turn Right
-            left_motor.stop()
-            right_motor.stop()
-            wait(400)
-            left_motor.run(-base_speed * 6)
-            right_motor.run(-base_speed * 6)
-            wait(400)  # Go Backwards
-            left_motor.stop()
-            right_motor.stop()
-            wait(500)
-            object_action_performed = False
+def rotate_180():
+    left_motor.run(-BASE_SPEED * 6)
+    right_motor.run(BASE_SPEED * 6)
+    wait(900)
+    left_motor.stop()
+    right_motor.stop()
 
-    # Calculate current light intensity
-    current_intensity = (red_value + green_value + blue_value) / 3
+def perform_green_line_action():
+    left_motor.run(BASE_SPEED * 6)
+    right_motor.run(BASE_SPEED * 6)
+    wait(375)
+    left_motor.stop()
+    right_motor.stop()
+    wait(400)
+    left_motor.run(-BASE_SPEED * 6)
+    right_motor.run(BASE_SPEED * 6)
+    wait(375)
+    left_motor.stop()
+    right_motor.stop()
+    wait(400)
+    left_motor.run(BASE_SPEED * 6)
+    right_motor.run(-BASE_SPEED * 6)
+    wait(430)
+    left_motor.stop()
+    right_motor.stop()
+    wait(400)
+    left_motor.run(-BASE_SPEED * 6)
+    right_motor.run(-BASE_SPEED * 6)
+    wait(400)
+    left_motor.stop()
+    right_motor.stop()
+    wait(500)
 
-    # Calculate the error term
-    error = threshold - current_intensity
-
-    # Integral term
+def adjust_motor_speeds(error):
+    global integral, prev_error
     integral += abs(error)
-
-    # Derivative term
     derivative = error - prev_error
     prev_error = error
+    error_diff = abs(error) - TOLERANCE
+    left_speed = BASE_SPEED
+    right_speed = BASE_SPEED
+    if error > TOLERANCE:
+        left_speed += (KP * error_diff) + (KI * integral) + (KD * derivative)
+        right_speed -= (KP * error_diff) + (KI * integral) + (KD * derivative)
+    elif error < -TOLERANCE:
+        left_speed -= (KP * error_diff) - (KI * integral) - (KD * derivative)
+        right_speed += (KP * error_diff) - (KI * integral) - (KD * derivative)
+    if motors_enabled:
+        left_motor.run(left_speed)
+        right_motor.run(right_speed)
+    return left_speed, right_speed
 
-    # Calculate the difference between error and tolerance
-    error_diff = abs(error) - tolerance
-    
-    right_speed = 1
-    left_speed = 1
+def main_loop():
+    global on_blue, TOLERANCE
+    while True:
+        if Button.CENTER in ev3.buttons.pressed():
+            toggle_motors()
+        
+        if Button.LEFT in ev3.buttons.pressed():
+            adjust_base_speed(-5)
+        
+        if Button.RIGHT in ev3.buttons.pressed():
+            adjust_base_speed(5)
+        
+        if Button.UP in ev3.buttons.pressed():
+            adjust_kp(1)
+        
+        if Button.DOWN in ev3.buttons.pressed():
+            adjust_kp(-1)
 
-    # Adjust motor speeds based on the error difference
-    if error > tolerance:
-        # Too dark, turn left
-        left_speed = base_speed + (Kp * error_diff) + (Ki * integral) + (Kd * derivative)
-        right_speed = base_speed - (Kp * error_diff) - (Ki * integral) - (Kd * derivative)
-        if motors_enabled:
-            left_motor.run(left_speed)
-            right_motor.run(right_speed)
-        ev3.screen.draw_text(0, 50, "Turn Right")
-        ev3.screen.draw_text(0, 60, "Error({}): Too dark".format(round(error,4)))
-    elif error < -tolerance:
-        # Too bright, turn right
-        left_speed = base_speed - (Kp * error_diff) - (Ki * integral) - (Kd * derivative)
-        right_speed = base_speed + (Kp * error_diff) + (Ki * integral) + (Kd * derivative)
-        if motors_enabled:
-            left_motor.run(left_speed)
-            right_motor.run(right_speed)
-        ev3.screen.draw_text(0, 50, "Turn Left")
-        ev3.screen.draw_text(0, 60, "Error ({}): Too bright".format(round(error,4)))
-    else:
-        # In the desired range, go straight
-        if motors_enabled:
-            left_motor.run(base_speed)
-            right_motor.run(base_speed)
-        ev3.screen.draw_text(0, 50, "Straight")
-        ev3.screen.draw_text(0, 60, "Error ({}): In range".format(round(error,4)))
+        (red_value, green_value, blue_value), distance = read_sensors()
+        current_intensity = (red_value + green_value + blue_value) / 3
+        error = THRESHOLD - current_intensity
+        handle_object_detection(distance)
+        left_speed, right_speed = adjust_motor_speeds(error)
 
-    # Set tolerances based on color
-    if green_value < blue_difference:  # if blue
-        tolerance = blue_tolerance
-        on_blue = True
-        ev3.screen.draw_text(0, 40, "BLUE")
-    elif red_value <= white_difference:  # if green
-        tolerance = green_tolerance
-        on_blue = False
-        ev3.screen.draw_text(0, 40, "GREEN")
-    else:  # if white
-        tolerance = white_tolerance
-        ev3.screen.draw_text(0, 40, "WHITE")
+        display_data(red_value, green_value, blue_value, distance, error, left_speed, right_speed)
+        
+        if green_value < BLUE_DIFFERENCE:
+            TOLERANCE = BLUE_TOLERANCE
+            on_blue = True
+            ev3.screen.draw_text(0, 40, "BLUE")
+        elif red_value <= WHITE_DIFFERENCE:
+            TOLERANCE = GREEN_TOLERANCE
+            on_blue = False
+            ev3.screen.draw_text(0, 40, "GREEN")
+        else:
+            TOLERANCE = WHITE_TOLERANCE
+            ev3.screen.draw_text(0, 40, "WHITE")
 
-    # Display info about if motors
-    ev3.screen.draw_text(0, 70, "Motors Enabled: {}".format(motors_enabled))
-    ev3.screen.draw_text(0, 80, "Base Speed: {}".format(base_speed))
-    ev3.screen.draw_text(0, 90, "Right Speed: {}".format(right_speed))
-    ev3.screen.draw_text(0, 100, "Left Speed: {}".format(left_speed))
-    ev3.screen.draw_text(0, 110, "Proportional Gain (Kp): {}".format(Kp))
+        wait(100)
 
-    # Wait briefly before repeating the loop
-    wait(100)
+main_loop()
