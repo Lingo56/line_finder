@@ -114,9 +114,9 @@ while True:
         # Check color under the robot
         if on_blue:  # If on blue line
             # Rotate 180 degrees and go backwards
-            left_motor.run_time(-base_speed * 100, 500)
-            right_motor.run_time(base_speed * 100, 500)
-            wait(500)  # Rotate for 0.5 second
+            left_motor.run(-base_speed * 100)
+            right_motor.run(base_speed * 100)
+            wait(800)  # Rotate for 0.5 second
             left_motor.stop()
             right_motor.stop()
             object_action_performed = False
