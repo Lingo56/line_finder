@@ -18,12 +18,12 @@ ev3.screen.set_font(small_font)
 # Write your program here.
 # Define variables and constants
 tolerance = 10
-blue_tolerance = 20
-green_tolerance = 9
-white_tolerance = 7
-base_speed = 120  # Base speed for the motors
-Kp = 40  # Proportional gain
-Ki = 0.01  # Integral gain
+blue_tolerance = 17
+green_tolerance = 7.4
+white_tolerance = 6.7
+base_speed = 75  # Base speed for the motors
+Kp = 30  # Proportional gain
+Ki = 0  # Integral gain
 Kd = 0  # Derivative gain
 integral = 0
 prev_error = 0
@@ -33,9 +33,9 @@ object_action_performed = False
 motors_enabled = False
 
 # Define target color values
-green_R, green_G, green_B = 14, 47, 10
-blue_R, blue_G, blue_B = 8, 11, 19
-white_R, white_G, white_B = 56, 56, 42
+green_R, green_G, green_B = 14, 45, 10
+blue_R, blue_G, blue_B = 8, 11, 18
+white_R, white_G, white_B = 58, 58, 43
 
 # Calculate light intensity for each color
 green_intensity = (green_R + green_G + green_B) / 3
@@ -114,30 +114,34 @@ while True:
         # Check color under the robot
         if on_blue:  # If on blue line
             # Rotate 180 degrees and go backwards
-            left_motor.run_time(-base_speed * 5, 500)
-            right_motor.run_time(base_speed * 5, 500)
+            left_motor.run_time(-base_speed * 100, 500)
+            right_motor.run_time(base_speed * 100, 500)
             wait(500)  # Rotate for 0.5 second
             left_motor.stop()
             right_motor.stop()
             object_action_performed = False
         else:  # If on green line
-            # No need to check if the object is still in the way
-            # Continue moving forward
-            left_motor.run_time(base_speed * 4, 375)
-            right_motor.run_time(base_speed * 4, 375)
-            wait(375)  # Move object
+            left_motor.run(base_speed * 100)
+            right_motor.run(base_speed * 100)
+            wait(375)  # Go forward
             left_motor.stop()
             right_motor.stop()
             wait(250)
-            left_motor.run_time(-base_speed * 4, 375)
-            right_motor.run_time(base_speed * 4, 375)
-            wait(375)  # Move object
-            left_motor.run_time(base_speed * 4, 325)
-            right_motor.run_time(-base_speed * 4, 325)
-            wait(325)  # Move object
-            left_motor.run_time(-base_speed * 4, 375)
-            right_motor.run_time(-base_speed * 4, 375)
-            wait(375)  # Return to original position
+            left_motor.run(-base_speed * 100)
+            right_motor.run(base_speed * 100)
+            wait(375)  # Turn left
+            left_motor.stop()
+            right_motor.stop()
+            wait(250)
+            left_motor.run(base_speed * 100)
+            right_motor.run(-base_speed * 100)
+            wait(450)  # Turn Right
+            left_motor.stop()
+            right_motor.stop()
+            wait(250)
+            left_motor.run(-base_speed * 100)
+            right_motor.run(-base_speed * 100)
+            wait(450)  # Go Backwards
             left_motor.stop()
             right_motor.stop()
             wait(500)
@@ -150,7 +154,7 @@ while True:
     error = threshold - current_intensity
 
     # Integral term
-    integral += error
+    integral += abs(error)
 
     # Derivative term
     derivative = error - prev_error
@@ -158,6 +162,9 @@ while True:
 
     # Calculate the difference between error and tolerance
     error_diff = abs(error) - tolerance
+    
+    right_speed = 1
+    left_speed = 1
 
     # Adjust motor speeds based on the error difference
     if error > tolerance:
